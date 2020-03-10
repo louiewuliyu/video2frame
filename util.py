@@ -39,6 +39,7 @@ def parse_args():
     parser.add_argument("--db_type", type=str, choices=["LMDB", "HDF5", "FILE", "PKL"], default="HDF5",
                         help="Type of the database")
     parser.add_argument("--tmp_dir", type=str, default="/tmp", help="Temporary folder")
+    parser.add_argument("--list_file", type=str, default="list_file.txt", help="The output list file containing [vid, frm num, class] in each line")
 
     # Clips
     parser.add_argument("--clips", type=int, default=1, help="Num of clips per video")

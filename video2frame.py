@@ -127,7 +127,7 @@ def sample_frames(args, frames, error_when_empty=True):
     return frames
 
 
-def process(args, video_key, video_info, frame_db):
+def process(args, video_key, video_info, frame_db, file_list_writer):
     video_file = Path(video_info['path'])
     video_tmp_dir = Path(args.tmp_dir) / "{}".format(video_key)
     video_tmp_dir.mkdir(exist_ok=True)
@@ -148,6 +148,9 @@ def process(args, video_key, video_info, frame_db):
 
         # Sample frames
         frames = sample_frames(args, frames)
+
+        # Get sampled frame number
+        file_list_writer.write("{} {} {}\n".format(video_key, len(frames), video_info['class']))
 
         # Save to database
         frame_db.put(video_key, ith_clip, clip_tmp_dir, frames)
@@ -172,10 +175,12 @@ if "__main__" == __name__:
     total = len(annotation)
     fails = []
 
+    file_list_writer = open(args.list_file, "w")
+
     if args.threads > 0:
         with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
             jobs = {
-                executor.submit(process, args, video_key, video_info, frame_db): video_info['path']
+                executor.submit(process, args, video_key, video_info, frame_db, file_list_writer): video_info['path']
                 for video_key, video_info in annotation.items()
             }
             for future in tqdm(futures.as_completed(jobs), total=total):
@@ -189,7 +194,7 @@ if "__main__" == __name__:
     else:
         for video_key, video_info in tqdm(annotation.items()):
             try:
-                video_status = process(args, video_key, video_info, frame_db)
+                video_status = process(args, video_key, video_info, frame_db, file_list_writer)
             except Exception as e:
                 tqdm.write("{} : {}".format(video_info['path'], e))
                 fails.append(video_info['path'])
